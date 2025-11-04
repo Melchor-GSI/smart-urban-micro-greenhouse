@@ -1,51 +1,106 @@
+import logging
+import uuid
+
 from flask import Blueprint, jsonify, request
 
-readings_bp = Blueprint("readings", __name__, url_prefix="/api/readings")
+from src.config.database import db
+from src.models.reading import Reading
+from src.services.readings import ReadingService
 
-readings_data = [
-    {"id": 1, "sensor": "temperature", "value": 22.5, "unit": "C"},
-    {"id": 2, "sensor": "humidity", "value": 60, "unit": "%"},
-    {"id": 3, "sensor": "pressure", "value": 1013, "unit": "hPa"},
-    {"id": 4, "sensor": "luminosity", "value": 300, "unit": "lux"},
-]
+logger = logging.getLogger(__name__)
+
+readings_bp = Blueprint("readings", __name__, url_prefix="/api/readings")
 
 
 @readings_bp.route("/", methods=["GET"])
 def get_readings():
-    return jsonify(
-        {"status": "success", "data": readings_data, "count": len(readings_data)}
-    )
+    try:
+        reading_service = ReadingService()
+
+        readings = reading_service.get_items()
+
+        return jsonify(
+            {
+                "status": "success",
+                "data": [r.model_dump() for r in readings],
+                "count": len(readings),
+            }
+        ), 200
+
+    except Exception as e:
+        logger.error(f"Error fetching readings: {e}")
+        return jsonify(
+            {"status": "error", "message": "Failed to fetch readings", "error": str(e)}
+        ), 500
 
 
 @readings_bp.route("/", methods=["POST"])
 def create_reading():
-    data = request.get_json()
+    try:
+        data = request.get_json()
 
-    if not data:
-        return jsonify({"status": "error", "message": "No data provided"}), 400
+        if not data:
+            return jsonify({"status": "error", "message": "No data provided"}), 400
 
-    required_fields = ["sensor", "value", "unit"]
-    for field in required_fields:
-        if field not in data:
+        try:
+            # Add timestamp
+            new_reading = Reading(
+                id=str(uuid.uuid4()),
+                variable=data["variable"],
+                sensor=data["sensor"],
+                value=data["value"],
+            )
+        except Exception as ve:
             return jsonify(
-                {"status": "error", "message": f"Required field '{field}' is missing"}
+                {
+                    "status": "error",
+                    "message": "Invalid reading data",
+                    "error": str(ve),
+                }
             ), 400
 
-    new_id = max(r["id"] for r in readings_data) + 1 if readings_data else 1
+        readings_collection = db.get_collection("readings")
+        readings_collection.insert_one(new_reading.model_dump())
 
-    new_reading = {
-        "id": new_id,
-        "sensor": data["sensor"],
-        "value": data["value"],
-        "unit": data["unit"],
-    }
+        return jsonify(
+            {
+                "status": "success",
+                "message": "Reading created successfully",
+            }
+        ), 201
 
-    readings_data.append(new_reading)
+    except Exception as e:
+        logger.error(f"Error creating reading: {e}")
+        return jsonify(
+            {"status": "error", "message": "Failed to create reading", "error": str(e)}
+        ), 500
 
-    return jsonify(
-        {
-            "status": "success",
-            "message": "Reading created successfully",
-            "data": new_reading,
-        }
-    ), 201
+
+@readings_bp.route("/<sensor>", methods=["GET"])
+def get_readings_by_sensor(sensor):
+    try:
+        readings_collection = db.get_collection("readings")
+
+        # Get query parameters
+        limit = request.args.get("limit", 100, type=int)
+
+        readings = list(
+            readings_collection.find({"sensor": sensor}, {"_id": 0})
+            .sort("timestamp", -1)
+            .limit(limit)
+        )
+
+        if not readings:
+            return jsonify(
+                {"status": "error", "message": "No readings found for this sensor"}
+            ), 404
+
+        return jsonify(
+            {"status": "success", "data": readings, "count": len(readings)}
+        ), 200
+
+    except Exception as e:
+        logger.error(f"Error fetching readings for sensor {sensor}: {e}")
+        return jsonify(
+            {"status": "error", "message": "Failed to fetch readings", "error": str(e)}
+        ), 500
