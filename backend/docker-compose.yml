@@ -30,15 +30,7 @@ services:
     container_name: iot-backend
     ports:
       - "5001:5001"
-    environment:
-      - FLASK_ENV=production
-      - FLASK_APP=app.py
-      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/iot_db?authSource=admin
-      - MONGODB_HOST=mongodb
-      - MONGODB_PORT=27017
-      - MONGODB_DATABASE=iot_db
-      - MONGODB_USERNAME=admin
-      - MONGODB_PASSWORD=password123
+    env_file: .env
     volumes:
       - ./data:/app/data
     restart: unless-stopped

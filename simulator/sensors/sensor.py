@@ -30,8 +30,8 @@ class SensorSimulator:
             self.base_air_quality = 50.0 + random.uniform(-10.0, 10.0)
         # elif self.sensor_type == "light":
         #     self.light = 300.0 + random.uniform(-50.0, 50.0)
-        # elif self.sensor_type == "soil_moisture":
-        #     self.soil_moisture = 50.0 + random.uniform(-5.0, 5.0)
+        elif self.sensor_type == "soil_moisture":
+            self.soil_moisture = 50.0 + random.uniform(-5.0, 5.0)
         else:
             raise ValueError(f"Unknown sensor type: {self.sensor_type}")
 
@@ -88,19 +88,19 @@ class SensorSimulator:
     #     lux = max(0.0, (self.light * 2.0) * daylight * cloudiness + random.uniform(-20, 20))
     #     return round(lux, 1)
 
-    # def _simulate_soil_moisture(self) -> float:
-    #     """
-    #     Soil moisture drifts slowly. Simulate small evaporation changes plus occasional random events.
-    #     """
-    #     # small random walk
-    #     self.soil_moisture += random.uniform(-0.3, 0.2)
-    #     # occasional watering event simulated with small probability (makes for good alerts testing)
-    #     if random.random() < 0.01:
-    #         # simulate watering: moisture jumps up
-    #         self.soil_moisture += random.uniform(5.0, 12.0)
-    #     # clamp
-    #     self.soil_moisture = min(max(self.soil_moisture, 0.0), 100.0)
-    #     return round(self.soil_moisture, 2)
+    def _simulate_soil_moisture(self) -> float:
+        """
+        Soil moisture drifts slowly. Simulate small evaporation changes plus occasional random events.
+        """
+        # small random walk
+        self.soil_moisture += random.uniform(-0.3, 0.2)
+        # occasional watering event simulated with small probability (makes for good alerts testing)
+        if random.random() < 0.01:
+            # simulate watering: moisture jumps up
+            self.soil_moisture += random.uniform(5.0, 12.0)
+        # clamp
+        self.soil_moisture = min(max(self.soil_moisture, 0.0), 100.0)
+        return round(self.soil_moisture, 2)
 
     def generate_reading(self) -> str:
         """
@@ -120,8 +120,8 @@ class SensorSimulator:
             value = self._simulate_air_quality()
         # elif self.sensor_type == "light":
         #     value = self._simulate_light(t)
-        # elif self.sensor_type == "soil_moisture":
-        #     value = self._simulate_soil_moisture()
+        elif self.sensor_type == "soil_moisture":
+            value = self._simulate_soil_moisture()
         else:
             raise ValueError(f"Unsupported sensor type: {self.sensor_type}")
 
