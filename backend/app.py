@@ -22,8 +22,14 @@ def create_app():
     app.config["DEBUG"] = os.getenv("FLASK_ENV") == "development"
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "your-secret-key-here")
 
-    # Enable CORS to allow requests from frontend
-    CORS(app)
+    # Enable CORS to allow all requests from any origin
+    CORS(
+        app,
+        origins="*",
+        methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+        allow_headers="*",
+        supports_credentials=True,
+    )
 
     # Initialize database connection
     try:
