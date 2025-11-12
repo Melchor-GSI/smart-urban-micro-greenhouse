@@ -1,0 +1,97 @@
+[
+  {
+    "id": "tab_mqtt_flask",
+    "type": "tab",
+    "label": "MQTT -> Flask",
+    "disabled": false,
+    "info": ""
+  },
+  {
+    "id": "mqtt_in_1",
+    "type": "mqtt in",
+    "z": "tab_mqtt_flask",
+    "name": "MQTT In",
+    "topic": "sensors/+/readings",
+    "qos": "0",
+    "datatype": "auto",
+    "broker": "mqtt_broker_cfg",
+    "x": 160,
+    "y": 120,
+    "wires": [
+      [
+        "fn_map"
+      ]
+    ]
+  },
+  {
+    "id": "fn_map",
+    "type": "function",
+    "z": "tab_mqtt_flask",
+    "name": "Map to API payload",
+    "func": "let p = msg.payload;\nif (typeof p === 'string') {\n  try { p = JSON.parse(p); } catch(e) { /* leave as string */ }\n}\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.payload = {\n  variable: p.sensor_type || p.variable,\n  sensor: p.device_id || p.sensor,\n  value: p.value,\n  timestamp: p.timestamp || new Date().toISOString()\n};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "x": 420,
+    "y": 120,
+    "wires": [
+      [
+        "http_post"
+      ]
+    ]
+  },
+  {
+    "id": "http_post",
+    "type": "http request",
+    "z": "tab_mqtt_flask",
+    "name": "POST to Flask",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "http://backend:5001/api/readings/",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "x": 700,
+    "y": 120,
+    "wires": [
+      [
+        "debug_out"
+      ]
+    ]
+  },
+  {
+    "id": "debug_out",
+    "type": "debug",
+    "z": "tab_mqtt_flask",
+    "name": "Response",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "x": 920,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "mqtt_broker_cfg",
+    "type": "mqtt-broker",
+    "z": "",
+    "broker": "mqtt-broker",
+    "port": "1883",
+    "clientid": "node-red",
+    "usetls": false,
+    "compatmode": true,
+    "keepalive": "60",
+    "cleansession": true,
+    "birthTopic": "",
+    "birthQos": "0",
+    "birthPayload": "",
+    "closeTopic": "",
+    "closePayload": "",
+    "willTopic": "",
+    "willQos": "0",
+    "willPayload": ""
+  }
+]
