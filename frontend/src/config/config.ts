@@ -7,7 +7,7 @@ export const config = {
         endpoints: {
             sensors: '/api/readings/now',
             readings: '/api/readings/',
-            events: '/api/events',
+            events: '/api/events/',
         },
         // Data fetch interval in milliseconds (500ms = 0.5 seconds)
         fetchInterval: 1000,
