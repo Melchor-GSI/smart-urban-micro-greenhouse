@@ -1,97 +1,166 @@
 [
-  {
-    "id": "tab_mqtt_flask",
-    "type": "tab",
-    "label": "MQTT -> Flask",
-    "disabled": false,
-    "info": ""
-  },
-  {
-    "id": "mqtt_in_1",
-    "type": "mqtt in",
-    "z": "tab_mqtt_flask",
-    "name": "MQTT In",
-    "topic": "sensors/+/readings",
-    "qos": "0",
-    "datatype": "auto",
-    "broker": "mqtt_broker_cfg",
-    "x": 160,
-    "y": 120,
-    "wires": [
-      [
-        "fn_map"
-      ]
-    ]
-  },
-  {
-    "id": "fn_map",
-    "type": "function",
-    "z": "tab_mqtt_flask",
-    "name": "Map to API payload",
-    "func": "let p = msg.payload;\nif (typeof p === 'string') {\n  try { p = JSON.parse(p); } catch(e) { /* leave as string */ }\n}\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.payload = {\n  variable: p.sensor_type || p.variable,\n  sensor: p.device_id || p.sensor,\n  value: p.value,\n  timestamp: p.timestamp || new Date().toISOString()\n};\nreturn msg;",
-    "outputs": 1,
-    "noerr": 0,
-    "x": 420,
-    "y": 120,
-    "wires": [
-      [
-        "http_post"
-      ]
-    ]
-  },
-  {
-    "id": "http_post",
-    "type": "http request",
-    "z": "tab_mqtt_flask",
-    "name": "POST to Flask",
-    "method": "POST",
-    "ret": "obj",
-    "paytoqs": "ignore",
-    "url": "http://backend:5001/api/readings/",
-    "tls": "",
-    "persist": false,
-    "proxy": "",
-    "authType": "",
-    "x": 700,
-    "y": 120,
-    "wires": [
-      [
-        "debug_out"
-      ]
-    ]
-  },
-  {
-    "id": "debug_out",
-    "type": "debug",
-    "z": "tab_mqtt_flask",
-    "name": "Response",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "payload",
-    "x": 920,
-    "y": 120,
-    "wires": []
-  },
-  {
-    "id": "mqtt_broker_cfg",
-    "type": "mqtt-broker",
-    "z": "",
-    "broker": "mqtt-broker",
-    "port": "1883",
-    "clientid": "node-red",
-    "usetls": false,
-    "compatmode": true,
-    "keepalive": "60",
-    "cleansession": true,
-    "birthTopic": "",
-    "birthQos": "0",
-    "birthPayload": "",
-    "closeTopic": "",
-    "closePayload": "",
-    "willTopic": "",
-    "willQos": "0",
-    "willPayload": ""
-  }
+    {
+        "id": "tab_mqtt_flask",
+        "type": "tab",
+        "label": "MQTT -> Flask",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "mqtt_in_1",
+        "type": "mqtt in",
+        "z": "tab_mqtt_flask",
+        "name": "MQTT In",
+        "topic": "sensors/+/readings",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "mqtt_broker_cfg",
+        "nl": false,
+        "rap": false,
+        "inputs": 0,
+        "x": 160,
+        "y": 120,
+        "wires": [
+            [
+                "fn_map",
+                "fn_map_alert"
+            ]
+        ]
+    },
+    {
+        "id": "fn_map",
+        "type": "function",
+        "z": "tab_mqtt_flask",
+        "name": "Map to API payload",
+        "func": "let p = msg.payload;\nif (typeof p === 'string') {\n  try { p = JSON.parse(p); } catch(e) { /* leave as string */ }\n}\nmsg.headers = { 'Content-Type': 'application/json' };\nmsg.payload = {\n  variable: p.sensor_type || p.variable,\n  sensor: p.device_id || p.sensor,\n  value: p.value,\n  timestamp: p.timestamp || new Date().toISOString()\n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 420,
+        "y": 120,
+        "wires": [
+            [
+                "http_post"
+            ]
+        ]
+    },
+    {
+        "id": "http_post",
+        "type": "http request",
+        "z": "tab_mqtt_flask",
+        "name": "POST to Flask",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://backend:5001/api/readings/",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 700,
+        "y": 120,
+        "wires": [
+            [
+                "debug_out"
+            ]
+        ]
+    },
+    {
+        "id": "debug_out",
+        "type": "debug",
+        "z": "tab_mqtt_flask",
+        "name": "Readings",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 920,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "fn_map_alert",
+        "type": "function",
+        "z": "tab_mqtt_flask",
+        "name": "Map Alert to API payload",
+        "func": "// Define thresholds for each sensor\nconst thresholds = {\n    temperature: { low_warn: 14, low_crit: 10, high_warn: 30, high_crit: 35 },\n    humidity: { low_warn: 40, low_crit: 30, high_warn: 80, high_crit: 90 },\n    soil_moisture: { low_warn: 30, low_crit: 20, high_warn: 80, high_crit: 90 },\n    co2: { low_warn: 350, high_warn: 1200, high_crit: 2000, extreme: 3000 }\n};\n\nlet p = msg.payload;\n\n// If payload is a string, try to parse it as JSON\nif (typeof p === 'string') {\n    try {\n        p = JSON.parse(p);\n    } catch (e) {\n        return null;\n    }\n}\n\nlet alert = null;\n\n// Detect alert based on sensor type and thresholds\nswitch (p.sensor_type) {\n    case 'temperature':\n        if (p.value < thresholds.temperature.low_crit) alert = { event_type: 'under_limit', urgency: 'high' };\n        else if (p.value < thresholds.temperature.low_warn) alert = { event_type: 'warning_bottom', urgency: 'medium' };\n        else if (p.value > thresholds.temperature.high_crit) alert = { event_type: 'over_limit', urgency: 'high' };\n        else if (p.value > thresholds.temperature.high_warn) alert = { event_type: 'warning_top', urgency: 'medium' };\n        break;\n    case 'humidity':\n        if (p.value < thresholds.humidity.low_crit) alert = { event_type: 'under_limit', urgency: 'high' };\n        else if (p.value < thresholds.humidity.low_warn) alert = { event_type: 'warning_bottom', urgency: 'medium' };\n        else if (p.value > thresholds.humidity.high_crit) alert = { event_type: 'over_limit', urgency: 'high' };\n        else if (p.value > thresholds.humidity.high_warn) alert = { event_type: 'warning_top', urgency: 'medium' };\n        break;\n    case 'soil_moisture':\n        if (p.value < thresholds.soil_moisture.low_crit) alert = { event_type: 'under_limit', urgency: 'high' };\n        else if (p.value < thresholds.soil_moisture.low_warn) alert = { event_type: 'warning_bottom', urgency: 'medium' };\n        else if (p.value > thresholds.soil_moisture.high_crit) alert = { event_type: 'over_limit', urgency: 'high' };\n        else if (p.value > thresholds.soil_moisture.high_warn) alert = { event_type: 'warning_top', urgency: 'medium' };\n        break;\n    case 'co2':\n        if (p.value > thresholds.co2.extreme) alert = { event_type: 'over_limit', urgency: 'high' };\n        else if (p.value > thresholds.co2.high_crit) alert = { event_type: 'over_limit', urgency: 'high' };\n        else if (p.value > thresholds.co2.high_warn) alert = { event_type: 'warning_top', urgency: 'medium' };\n        else if (p.value < thresholds.co2.low_warn) alert = { event_type: 'warning_bottom', urgency: 'medium' };\n        break;\n}\n\n// If alert detected, create payload for /api/events POST\nif (alert) {\n    msg.headers = { 'Content-Type': 'application/json' };\n    msg.payload = {\n        sensor: p.device_id,\n        variable: p.sensor_type,\n        event_type: alert.event_type,\n        urgency: alert.urgency,\n        status: 'active',\n        creation_date: new Date().toISOString()\n    };\n    return [msg];\n}\n\n// If no alert, do nothing\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 220,
+        "wires": [
+            [
+                "http_post_alert"
+            ]
+        ]
+    },
+    {
+        "id": "http_post_alert",
+        "type": "http request",
+        "z": "tab_mqtt_flask",
+        "name": "POST Alert to Flask",
+        "method": "POST",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "http://backend:5001/api/events/",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 710,
+        "y": 220,
+        "wires": [
+            [
+                "debug_out_alert"
+            ]
+        ]
+    },
+    {
+        "id": "debug_out_alert",
+        "type": "debug",
+        "z": "tab_mqtt_flask",
+        "name": "Alerts",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 910,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "mqtt_broker_cfg",
+        "type": "mqtt-broker",
+        "broker": "mqtt-broker",
+        "port": "1883",
+        "clientid": "node-red",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "closeTopic": "",
+        "closePayload": "",
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": ""
+    }
 ]
