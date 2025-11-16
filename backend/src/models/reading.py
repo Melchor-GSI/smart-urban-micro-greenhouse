@@ -22,10 +22,10 @@ class Reading(BaseModel):
 
 class ReadingsResponse(BaseModel):
     timestamp: Optional[datetime] = None
-    temperature: float
-    humidity: float
-    soil_moisture: float
-    co2: float
+    temperature: Optional[float] = None
+    humidity: Optional[float] = None
+    soil_moisture: Optional[float] = None
+    co2: Optional[float] = None
 
     @model_validator(mode="after")
     def set_timestamp(self) -> "ReadingsResponse":
