@@ -1,4 +1,5 @@
-import { Badge, Layout, Space, Typography } from "antd";
+import { Layout, Typography } from "antd";
+import { AlertsPanel } from "./AlertsPanel";
 
 const { Header } = Layout;
 const { Title } = Typography;
@@ -16,9 +17,7 @@ export const PageHeader = () => {
       <Title level={3} style={{ color: "white", margin: 0 }}>
         🌱 Smart Urban Micro-Greenhouse
       </Title>
-      <Space>
-        <Badge status="processing" text="Online" style={{ color: "white" }} />
-      </Space>
+      <AlertsPanel />
     </Header>
   );
 };
