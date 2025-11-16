@@ -23,9 +23,9 @@ interface ApiResponse {
 
 // Variable type mapping for display
 const VARIABLE_TYPE_LABELS: Record<VariableType, string> = {
-  temperature: "Temperatura",
-  humidity: "Humedad",
-  soil_moisture: "Humedad del Suelo",
+  temperature: "Temperature",
+  humidity: "Humidity",
+  soil_moisture: "Soil Moisture",
   co2: "CO2",
 };
 
@@ -43,7 +43,7 @@ export const DataHistory = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Build the API endpoint for readings
-  const API_ENDPOINT = `${config.api.baseUrl}/api/readings/`;
+  const API_ENDPOINT = `${config.api.baseUrl}${config.api.endpoints.readings}`;
 
   const fetchHistoricalData = useCallback(async () => {
     try {
@@ -119,7 +119,7 @@ export const DataHistory = () => {
   // Define table columns
   const columns = [
     {
-      title: "Fecha/Hora",
+      title: "Date/time",
       dataIndex: "creation_date",
       key: "creation_date",
       render: (date: string) => (
@@ -151,7 +151,7 @@ export const DataHistory = () => {
       width: 100,
     },
     {
-      title: "Valor",
+      title: "Value",
       dataIndex: "value",
       key: "value",
       render: (value: number, record: Reading) => (
@@ -167,7 +167,7 @@ export const DataHistory = () => {
   // Show loading state
   if (isLoading && (!historicalData || historicalData.length === 0)) {
     return (
-      <Card title="📈 Historial de Sensores" style={{ marginBottom: 24 }}>
+      <Card title="📈 Readings History" style={{ marginBottom: 24 }}>
         <div
           style={{
             display: "flex",
@@ -186,10 +186,10 @@ export const DataHistory = () => {
   // Show error state
   if (error) {
     return (
-      <Card title="📈 Historial de Sensores" style={{ marginBottom: 24 }}>
+      <Card title="📈 Readings History" style={{ marginBottom: 24 }}>
         <Alert
-          message="Error al cargar datos"
-          description={`No se pudieron cargar los datos históricos: ${error}`}
+          message="Error loading data"
+          description={`Failed to load historical data: ${error}`}
           type="error"
           showIcon
         />
@@ -199,18 +199,18 @@ export const DataHistory = () => {
 
   return (
     <Card
-      title="📈 Historial de Sensores"
+      title="📈 Readings History"
       style={{ marginBottom: 24 }}
       extra={
         <Text type="secondary" style={{ fontSize: "12px" }}>
-          {Array.isArray(historicalData) ? historicalData.length : 0} registros
+          {Array.isArray(historicalData) ? historicalData.length : 0} records
         </Text>
       }
     >
       {!Array.isArray(historicalData) || historicalData.length === 0 ? (
         <Alert
-          message="Sin datos históricos"
-          description="No hay datos históricos disponibles en este momento."
+          message="No historical data"
+          description="No historical data is available at this time."
           type="warning"
           showIcon
         />

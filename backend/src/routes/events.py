@@ -1,56 +1,126 @@
+import uuid
+
 from flask import Blueprint, jsonify, request
 
-events_bp = Blueprint("events", __name__, url_prefix="/api/events")
+from src.models.event import Event
+from src.services.events import EventService
 
-events_data = [
-    {"id": 1, "name": "Event 1", "description": "Description of event 1"},
-    {"id": 2, "name": "Event 2", "description": "Description of event 2"},
-    {"id": 3, "name": "Event 3", "description": "Description of event 3"},
-]
+events_bp = Blueprint("events", __name__, url_prefix="/api/events")
 
 
 @events_bp.route("/", methods=["GET"])
 def get_events():
-    return jsonify(
-        {"status": "success", "data": events_data, "count": len(events_data)}
-    )
+    try:
+        event_service = EventService()
 
+        # Get status parameter from query string
+        status = request.args.get("status")
 
-@events_bp.route("/<int:event_id>", methods=["GET"])
-def get_event(event_id):
-    """Get a specific event by ID"""
-    event = next((e for e in events_data if e["id"] == event_id), None)
+        # Get events with optional status filtering
+        events = event_service.get_items(status=status)
 
-    if event:
-        return jsonify({"status": "success", "data": event})
-    else:
         return jsonify(
-            {"status": "error", "message": f"Event with ID {event_id} not found"}
-        ), 404
+            {
+                "status": "success",
+                "data": [event.model_dump() for event in events],
+                "count": len(events),
+            }
+        ), 200
+
+    except Exception as e:
+        return jsonify(
+            {"status": "error", "message": "Failed to fetch events", "error": str(e)}
+        ), 500
 
 
 @events_bp.route("/", methods=["POST"])
 def create_event():
     """Create a new event"""
-    data = request.get_json()
+    try:
+        event_service = EventService()
+        data = request.get_json()
 
-    if not data or "name" not in data or "description" not in data:
+        if not data:
+            return jsonify({"status": "error", "message": "No data provided"}), 400
+
+        # Create Event object for validation
+        try:
+            new_event = Event(
+                id=str(uuid.uuid4()),
+                sensor=data["sensor"],
+                variable=data["variable"],
+                event_type=data["event_type"],
+                urgency=data["urgency"],
+                status="active",
+            )
+        except KeyError as e:
+            return jsonify(
+                {"status": "error", "message": f"Missing required field: {str(e)}"}
+            ), 400
+        except Exception as e:
+            return jsonify(
+                {"status": "error", "message": "Invalid event data", "error": str(e)}
+            ), 400
+
+        if event_service.active_event(new_event):
+            return jsonify(
+                {
+                    "status": "success",
+                    "message": "An active or acknowledged event with the same variable and event_type already exists",
+                }
+            ), 200
+
+        # Insert into database
+        success = event_service.set_item(new_event)
+        # TODO: send notification to frontend
+        if not success:
+            return jsonify(
+                {"status": "error", "message": "Failed to create event in database"}
+            ), 500
+
         return jsonify(
             {
-                "status": "error",
-                "message": "Required fields: name and description",
+                "status": "success",
+                "message": "Event created successfully",
+                "data": new_event.model_dump(),
             }
-        ), 400
+        ), 201
 
-    new_id = max([e["id"] for e in events_data]) + 1 if events_data else 1
-    new_event = {"id": new_id, "name": data["name"], "description": data["description"]}
+    except Exception as e:
+        return jsonify(
+            {"status": "error", "message": "Failed to create event", "error": str(e)}
+        ), 500
 
-    events_data.append(new_event)
 
-    return jsonify(
-        {
-            "status": "success",
-            "message": "Event created successfully",
-            "data": new_event,
-        }
-    ), 201
+@events_bp.route("/", methods=["PATCH"])
+def update_event():
+    """Update an existing event's status"""
+    try:
+        event_service = EventService()
+        data = request.get_json()
+
+        if not data:
+            return jsonify({"status": "error", "message": "No data provided"}), 400
+
+        try:
+            event_id = data["id"]
+            new_status = data["status"]
+        except KeyError as e:
+            return jsonify(
+                {"status": "error", "message": f"Missing required field: {str(e)}"}
+            ), 400
+
+        # Update event in the database
+        success = event_service.patch_item(event_id, {"status": new_status})
+
+        if not success:
+            return jsonify({"status": "error", "message": "Event not found"}), 404
+
+        return jsonify(
+            {"status": "success", "message": "Event updated successfully"}
+        ), 200
+
+    except Exception as e:
+        return jsonify(
+            {"status": "error", "message": "Failed to update event", "error": str(e)}
+        ), 500

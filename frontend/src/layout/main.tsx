@@ -12,7 +12,6 @@ export const PageLayout = () => {
   return (
     <Content style={{ padding: "24px" }}>
       {/* <ReadingAlert /> */}
-
       <MainMetrics />
       {/* <TrendCharts /> */}
       {/* <ControlPanel /> */}

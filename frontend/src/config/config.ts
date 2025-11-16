@@ -3,9 +3,11 @@ export const config = {
     // API Configuration
     api: {
         // Change this to your actual server endpoint
-        baseUrl: 'http://127.0.0.1:5000',
+        baseUrl: 'http://127.0.0.1:5001',
         endpoints: {
             sensors: '/api/readings/now',
+            readings: '/api/readings/',
+            events: '/api/events',
         },
         // Data fetch interval in milliseconds (500ms = 0.5 seconds)
         fetchInterval: 1000,
