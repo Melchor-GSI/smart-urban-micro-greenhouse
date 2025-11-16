@@ -102,6 +102,22 @@ services:
       retries: 5
       start_period: 20s
 
+  frontend:
+    build:
+      context: ./frontend
+    container_name: iot-frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - iot-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000" ]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 networks:
   iot-network:
     driver: bridge

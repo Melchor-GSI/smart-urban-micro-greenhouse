@@ -28,7 +28,7 @@ MQTT_KEEPALIVE = int(os.getenv("MQTT_KEEPALIVE", "60"))
 DEBUG = os.getenv("SIMULATOR_DEBUG", "False").lower() in ("1", "true", "yes")
 
 # Sensor types to simulate (each will have NUM_DEVICES instances)
-SENSOR_TYPES = ["temperature", "humidity", "air_quality", "soil_moisture"]
+SENSOR_TYPES = ["temperature", "humidity", "soil_moisture", "co2"]
 
 """
 Configuration for the sensor simulator.
