@@ -52,7 +52,7 @@ class ReadingService:
         readings = (
             db.get_collection(self.collection_name)
             .find(query_filter)
-            .sort("creation_date", -1)
+            .sort("creation_date", 1)
         )
 
         return [self.serializer.model_validate(reading) for reading in readings]
