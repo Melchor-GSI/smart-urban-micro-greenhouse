@@ -23,11 +23,15 @@ def get_readings():
         reading_service = ReadingService()
 
         readings = reading_service.get_items()
+        data = [r.model_dump() for r in readings]
+        data.reverse()
+
+        print(data)
 
         return jsonify(
             {
                 "status": "success",
-                "data": [r.model_dump() for r in readings],
+                "data": data,
                 "count": len(readings),
             }
         ), 200
@@ -39,7 +43,7 @@ def get_readings():
         ), 500
 
 
-@readings_bp.route("/now", methods=["GET"])
+@readings_bp.route("/now/", methods=["GET"])
 def get_current_readings():
     try:
         reading_service = ReadingService()

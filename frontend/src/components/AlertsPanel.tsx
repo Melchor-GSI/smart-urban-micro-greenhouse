@@ -162,7 +162,7 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({ style }) => {
         placement="right"
         onClose={onClose}
         open={visible}
-        width={400}
+        width={600}
         extra={
           <Space>
             <Button onClick={refetch} loading={loading}>

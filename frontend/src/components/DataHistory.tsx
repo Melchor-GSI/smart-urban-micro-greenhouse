@@ -1,4 +1,4 @@
-import { Alert, Card, Spin, Table, Tag, Typography } from "antd";
+import { Alert, Button, Card, Spin, Table, Tag, Typography } from "antd";
 import { useCallback, useEffect, useState } from "react";
 import { config } from "../config/config";
 import type { VariableType } from "../types/sensorsData";
@@ -60,7 +60,17 @@ export const DataHistory = () => {
 
       // Check if response has data property (API wrapper format)
       if (data && data.data && Array.isArray(data.data)) {
-        setHistoricalData(data.data);
+        const sorted_data = data.data.sort((a, b) => {
+          const dateA = a.creation_date
+            ? new Date(a.creation_date).getTime()
+            : 0;
+          const dateB = b.creation_date
+            ? new Date(b.creation_date).getTime()
+            : 0;
+          return dateB - dateA; // Descending order
+        });
+        console.log("🚀 ~ DataHistory ~ sorted_data:", sorted_data);
+        setHistoricalData(sorted_data);
       } else {
         console.warn("API response format not recognized:", data);
         setHistoricalData([]);
@@ -75,11 +85,6 @@ export const DataHistory = () => {
 
   useEffect(() => {
     fetchHistoricalData();
-
-    // Refresh data every 30 seconds
-    const interval = setInterval(fetchHistoricalData, 30000);
-
-    return () => clearInterval(interval);
   }, [fetchHistoricalData]);
 
   // Format date for display
@@ -202,9 +207,19 @@ export const DataHistory = () => {
       title="📈 Readings History"
       style={{ marginBottom: 24 }}
       extra={
-        <Text type="secondary" style={{ fontSize: "12px" }}>
-          {Array.isArray(historicalData) ? historicalData.length : 0} records
-        </Text>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Button
+            type="primary"
+            size="small"
+            onClick={fetchHistoricalData}
+            loading={isLoading}
+          >
+            Refresh
+          </Button>
+          <Text type="secondary" style={{ fontSize: "12px" }}>
+            {Array.isArray(historicalData) ? historicalData.length : 0} records
+          </Text>
+        </div>
       }
     >
       {!Array.isArray(historicalData) || historicalData.length === 0 ? (
@@ -217,11 +232,16 @@ export const DataHistory = () => {
       ) : (
         <Table
           columns={columns}
-          dataSource={(Array.isArray(historicalData)
-            ? historicalData
-            : []
-          ).slice(-20)} // Show last 20 records
-          pagination={false}
+          dataSource={Array.isArray(historicalData) ? historicalData : []}
+          pagination={{
+            pageSize: 20,
+            showSizeChanger: true,
+            pageSizeOptions: ["10", "20", "50", "100"],
+            showQuickJumper: true,
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} of ${total} records`,
+            size: "small",
+          }}
           size="small"
           scroll={{ x: true }}
           rowKey={(record) =>
