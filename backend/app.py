@@ -6,7 +6,9 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 
 from src.config.database import db
+from src.config.swagger import init_swagger
 from src.routes import bp as routes_bp
+from src.routes.swagger_routes import register_swagger_routes
 
 # Load environment variables
 load_dotenv()
@@ -31,6 +33,9 @@ def create_app():
         supports_credentials=True,
     )
 
+    # Initialize Swagger
+    api = init_swagger(app)
+
     # Initialize database connection
     try:
         db.connect()
@@ -38,7 +43,11 @@ def create_app():
     except Exception as e:
         print(f"Failed to connect to database: {e}")
 
-    # Register blueprints
+    # Register blueprints with Swagger
+
+    register_swagger_routes(api)
+
+    # Register original blueprints for backwards compatibility
     for bp in routes_bp:
         app.register_blueprint(bp)
 
@@ -73,6 +82,7 @@ if __name__ == "__main__":
 
     # Run the server
     print("🚀 Initializing Flask server...")
+    print("📍 Swagger documentation available at: http://localhost:5001/")
     print("📍 Available endpoints:")
 
     app.run(
