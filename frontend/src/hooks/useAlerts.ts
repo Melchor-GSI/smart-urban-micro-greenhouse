@@ -1,14 +1,19 @@
-import { useCallback, useEffect, useState } from 'react';
+import { message } from 'antd';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { config } from '../config/config';
 import type { Alert, AlertStatus } from '../types/alertsData';
 
-export const useAlerts = (status?: AlertStatus) => {
+export const useAlerts = (status?: AlertStatus, enablePolling: boolean = false) => {
     const [alerts, setAlerts] = useState<Alert[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [lastFetch, setLastFetch] = useState<Date | null>(null);
+    const previousAlertsRef = useRef<Alert[]>([]);
 
-    const fetchAlerts = useCallback(async () => {
-        setLoading(true);
+    const fetchAlerts = useCallback(async (silent: boolean = false) => {
+        if (!silent) {
+            setLoading(true);
+        }
         setError(null);
 
         try {
@@ -24,13 +29,14 @@ export const useAlerts = (status?: AlertStatus) => {
                 if (response.status === 404) {
                     console.warn('Events endpoint not found, using empty alerts array');
                     setAlerts([]);
+                    setLastFetch(new Date());
                     return;
                 }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const payload = await response.json();
-            const data = payload.data
+            const data = payload.data;
             console.log('API Response:', data); // Debug log
 
             // Handle different possible response formats
@@ -43,7 +49,39 @@ export const useAlerts = (status?: AlertStatus) => {
                 alertsArray = data.events;
             }
 
+            // Check for new alerts and show notifications
+            if (enablePolling && previousAlertsRef.current.length > 0) {
+                const previousActiveAlerts = previousAlertsRef.current.filter(
+                    alert => alert.status === 'active'
+                );
+                const newActiveAlerts = alertsArray.filter(
+                    alert => alert.status === 'active' &&
+                        !previousActiveAlerts.some(prev => prev.id === alert.id)
+                );
+
+                // Show notification for new alerts
+                if (newActiveAlerts.length > 0) {
+                    newActiveAlerts.forEach(alert => {
+                        const urgencyEmoji = alert.urgency === 'high' ? '🚨' :
+                            alert.urgency === 'medium' ? '⚠️' : 'ℹ️';
+                        const variableEmoji = alert.variable === 'temperature' ? '🌡️' :
+                            alert.variable === 'humidity' ? '💧' :
+                                alert.variable === 'soil_moisture' ? '🌱' : '💨';
+
+                        message.warning({
+                            content: `${urgencyEmoji} ${variableEmoji} New ${alert.urgency} alert: ${alert.sensor} - ${alert.variable}`,
+                            duration: 8, // Show for 8 seconds
+                            key: alert.id, // Prevent duplicate notifications
+                        });
+                    });
+                }
+            }
+
+            // Update previous alerts reference
+            previousAlertsRef.current = alertsArray;
+
             setAlerts(alertsArray);
+            setLastFetch(new Date());
         } catch (err) {
             // Handle network errors gracefully
             if (err instanceof TypeError && err.message.includes('fetch')) {
@@ -55,13 +93,30 @@ export const useAlerts = (status?: AlertStatus) => {
                 console.error('Error fetching alerts:', err);
             }
         } finally {
-            setLoading(false);
+            if (!silent) {
+                setLoading(false);
+            }
         }
-    }, [status]);
+    }, [status, enablePolling]);
 
     useEffect(() => {
+        // Initial fetch
         fetchAlerts();
-    }, [fetchAlerts]);
+
+        // Setup polling if enabled
+        let intervalId: number | undefined;
+        if (enablePolling) {
+            intervalId = window.setInterval(() => {
+                fetchAlerts(true); // Silent fetch for background updates
+            }, 2000); // Poll every 2 seconds for faster alert detection
+        }
+
+        return () => {
+            if (intervalId) {
+                window.clearInterval(intervalId);
+            }
+        };
+    }, [fetchAlerts, enablePolling]);
 
     const acknowledgeAlert = async (alertId: string) => {
         try {
@@ -89,7 +144,8 @@ export const useAlerts = (status?: AlertStatus) => {
         alerts,
         loading,
         error,
-        refetch: fetchAlerts,
+        lastFetch,
+        refetch: () => fetchAlerts(false), // Force visible loading state
         acknowledgeAlert,
     };
 };

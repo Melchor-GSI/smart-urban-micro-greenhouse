@@ -91,16 +91,21 @@ interface AlertsPanelProps {
 export const AlertsPanel: React.FC<AlertsPanelProps> = ({ style }) => {
   const [visible, setVisible] = useState(false);
   const [statusFilter, setStatusFilter] = useState<AlertStatus>("active");
-  const { alerts, loading, error, refetch, acknowledgeAlert } =
-    useAlerts(statusFilter);
+
+  // Use polling for background updates only when component is mounted
+  const { alerts, loading, error, refetch, acknowledgeAlert, lastFetch } =
+    useAlerts(statusFilter, true); // Enable polling
+
+  // Separate hook to get active alerts count (always polling)
+  const { alerts: activeAlerts } = useAlerts("active", true);
+
   console.log("🚀 ~ AlertsPanel ~ alerts:", alerts);
 
   // Ensure alerts is always an array
   const safeAlerts = Array.isArray(alerts) ? alerts : [];
+  const safeActiveAlerts = Array.isArray(activeAlerts) ? activeAlerts : [];
 
-  const activeAlertsCount = safeAlerts.filter(
-    (alert) => alert.status === "active"
-  ).length;
+  const activeAlertsCount = safeActiveAlerts.length;
 
   const handleAcknowledge = async (alertId: string) => {
     try {
@@ -126,13 +131,25 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({ style }) => {
         <Tooltip title={`${activeAlertsCount} active alerts`}>
           <Button
             type="text"
-            icon={<BellOutlined />}
+            icon={
+              <BellOutlined
+                style={{
+                  color: activeAlertsCount > 0 ? "#ff4d4f" : "white",
+                  fontSize: activeAlertsCount > 0 ? "18px" : "16px",
+                  animation:
+                    activeAlertsCount > 0 ? "pulse 2s infinite" : "none",
+                }}
+              />
+            }
             onClick={showDrawer}
             style={{
               color: "white",
               display: "flex",
               alignItems: "center",
               gap: "8px",
+              border: activeAlertsCount > 0 ? "1px solid #ff4d4f" : "none",
+              borderRadius: "6px",
+              padding: "4px 12px",
             }}
           >
             {activeAlertsCount > 0 && (
@@ -140,15 +157,31 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({ style }) => {
                 count={activeAlertsCount}
                 size="small"
                 style={{
-                  backgroundColor:
-                    activeAlertsCount > 0 ? "#ff4d4f" : "#52c41a",
+                  backgroundColor: "#ff4d4f",
                 }}
               />
             )}
-            <Text style={{ color: "white" }}>Alerts</Text>
+            <Text
+              style={{
+                color: activeAlertsCount > 0 ? "#ff4d4f" : "white",
+                fontWeight: activeAlertsCount > 0 ? "600" : "normal",
+              }}
+            >
+              Alerts
+            </Text>
           </Button>
         </Tooltip>
       </Space>
+
+      <style>
+        {`
+          @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+          }
+        `}
+      </style>
 
       <Drawer
         title={
@@ -172,6 +205,19 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({ style }) => {
         }
       >
         <Space direction="vertical" style={{ width: "100%" }}>
+          {lastFetch && (
+            <Text
+              type="secondary"
+              style={{
+                fontSize: "12px",
+                textAlign: "center",
+                display: "block",
+              }}
+            >
+              Last updated: {lastFetch.toLocaleTimeString()}
+            </Text>
+          )}
+
           <Segmented
             options={[
               { label: "Active", value: "active" },
