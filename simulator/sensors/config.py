@@ -7,7 +7,7 @@ MQTT_BROKER = os.getenv("MQTT_BROKER", "localhost")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
 
 # Base publish interval in seconds for each device (can be randomized per-device)
-PUBLISH_INTERVAL = float(os.getenv("PUBLISH_INTERVAL", "5.0"))
+PUBLISH_INTERVAL = float(os.getenv("PUBLISH_INTERVAL", "10.0"))
 
 # Number of simulated devices to run concurrently (1 = single device)
 NUM_DEVICES = int(os.getenv("NUM_DEVICES", "1"))
