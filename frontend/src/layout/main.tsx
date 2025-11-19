@@ -1,5 +1,6 @@
 import { Layout } from "antd";
 // import { SimpleChart } from "../components/SimpleChart";
+import { TimeSeriesCharts } from "../components/TimeSeriesCharts";
 import { MainMetrics } from "./MainMetrics";
 // import { ControlPanel } from "../components/ControlPanel";
 import { DataHistory } from "../components/DataHistory";
@@ -13,6 +14,7 @@ export const PageLayout = () => {
     <Content style={{ padding: "24px" }}>
       {/* <ReadingAlert /> */}
       <MainMetrics />
+      <TimeSeriesCharts />
       {/* <TrendCharts /> */}
       {/* <ControlPanel /> */}
       <DataHistory />
