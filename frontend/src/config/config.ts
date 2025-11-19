@@ -16,20 +16,20 @@ export const config = {
     // Sensor thresholds for status determination
     thresholds: {
         temperature: {
-            critical: { min: 18, max: 28 },
-            warning: { min: 20, max: 26 },
+            critical: { min: 10, max: 35 },
+            warning: { min: 14, max: 30 },
         },
         humidity: {
-            critical: { min: 40, max: 80 },
-            warning: { min: 50, max: 70 },
+            critical: { min: 30, max: 90 },
+            warning: { min: 40, max: 80 },
         },
         soilMoisture: {
-            critical: { min: 20, max: 80 },
-            warning: { min: 30, max: 70 },
+            critical: { min: 20, max: 90 },
+            warning: { min: 30, max: 80 },
         },
         co2: {
-            critical: { min: 300, max: 600 },
-            warning: { min: 350, max: 550 },
+            critical: { min: 350, max: 2000 },
+            warning: { min: 550, max: 1200 },
         },
     },
 };
