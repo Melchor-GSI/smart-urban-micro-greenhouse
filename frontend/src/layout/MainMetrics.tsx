@@ -1,5 +1,6 @@
 import { Alert, Col, Row, Spin, Typography } from "antd";
 import { SensorCard } from "../components/SensorCard";
+import { config } from "../config/config";
 import { useSensorData } from "../hooks/useSensorData";
 import {
   getCO2Status,
@@ -63,8 +64,8 @@ export const MainMetrics = () => {
             value={currentData.temperature}
             precision={1}
             suffix="°C"
-            maxValue={35}
-            optimalRange="Optimal range: 20-26°C"
+            maxValue={config.thresholds.temperature.critical.max}
+            optimalRange={`Optimal range: ${config.thresholds.temperature.warning.min}-${config.thresholds.temperature.warning.max}°C`}
             getStatus={getTemperatureStatus}
           />
         </Col>
@@ -75,8 +76,8 @@ export const MainMetrics = () => {
             value={currentData.humidity}
             precision={1}
             suffix="%"
-            maxValue={100}
-            optimalRange="Optimal range: 50-70%"
+            maxValue={config.thresholds.humidity.critical.max}
+            optimalRange={`Optimal range: ${config.thresholds.humidity.warning.min}-${config.thresholds.humidity.warning.max}%`}
             getStatus={getHumidityStatus}
           />
         </Col>
@@ -87,8 +88,8 @@ export const MainMetrics = () => {
             value={currentData.soil_moisture}
             precision={1}
             suffix="%"
-            maxValue={100}
-            optimalRange="Optimal range: 30-70%"
+            maxValue={config.thresholds.soilMoisture.critical.max}
+            optimalRange={`Optimal range: ${config.thresholds.soilMoisture.warning.min}-${config.thresholds.soilMoisture.warning.max}%`}
             getStatus={getSoilMoistureStatus}
           />
         </Col>
@@ -99,8 +100,8 @@ export const MainMetrics = () => {
             value={currentData.co2}
             precision={0}
             suffix="ppm"
-            maxValue={800}
-            optimalRange="Optimal range: 350-550 ppm"
+            maxValue={config.thresholds.co2.critical.max}
+            optimalRange={`Optimal range: ${config.thresholds.co2.warning.min}-${config.thresholds.co2.warning.max} ppm`}
             getStatus={getCO2Status}
           />
         </Col>
